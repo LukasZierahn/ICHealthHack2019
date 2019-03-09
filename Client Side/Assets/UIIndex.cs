@@ -2,8 +2,6 @@ using Unity.Engine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
-// using <stdlib.h>;
-// using <stdio.h>;
 // To decide if the player will be a white blood cell or a random virus.
 
 public class ModalPanel : MonoBehaviour {
