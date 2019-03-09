@@ -10,7 +10,7 @@ Upon random assignment of white blood cell or specific strain of bacteria, there
 
 SPECIFIC ROLE OF NEUTROPHILS:
 Abundant in the blood, these quickly enter tissues and phagocytize pathogens.
-Making up 50% of all white blood cells, they are short-lived(8 hours) and highly mobile (1000X speed of all other cells)
+Making up 50% of all white blood cells, they are short-lived (8 hours) and highly mobile (1000X speed of all other cells)
 
 
 
