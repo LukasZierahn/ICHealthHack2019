@@ -3,6 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+public struct Movement
+{
+    public Vector3 targetPos;
+    public GameObject GJ;
+    public float speed;
+
+    public Movement(Vector3 tP, GameObject gameObject, float spd)
+    {
+        targetPos = tP;
+        GJ = gameObject;
+        speed = spd;
+    }
+
+};
+
 public class CameraControls : MonoBehaviour
 {
     Boolean but0Pressed = false;
@@ -12,8 +27,9 @@ public class CameraControls : MonoBehaviour
 
     const float selectingDistance = 0.1f;
 
+    List<Movement> movements = new List<Movement>();
+
     GameObject selectedObject = null;
-    Vector3 selectedObjectTarget = new Vector3(0, 0, 0);
     float moveSpeed = 0.5f;
 
     Camera cam = null;
@@ -34,6 +50,9 @@ public class CameraControls : MonoBehaviour
         {
             but0Pressed = true;
 
+            if (selectedObject != null) {
+                selectedObject.GetComponent<Renderer>().material.color = Color.white;
+            }
             selectedObject = null;
 
             Vector3 mp = getAbsMousePos();
@@ -47,10 +66,7 @@ public class CameraControls : MonoBehaviour
                 if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
                 {
                     selectedObject = GJ;
-                    selectedObjectTarget = selectedObject.transform.position;
-                    rend.material.shader = Shader.Find("Specular");
-                    rend.material.SetColor("_SpecColor", Color.red);
-
+                    GJ.GetComponent<Renderer>().material.color = Color.red;
                 }
             }
 
@@ -62,7 +78,21 @@ public class CameraControls : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            selectedObjectTarget = getAbsMousePos();
+            bool found = false;
+            for (int i = 0; i < movements.Count; i++)
+            {
+                if (movements[i].GJ == selectedObject)
+                {
+                    movements[i] = new Movement(getAbsMousePos(), movements[i].GJ, movements[i].speed);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                movements.Add(new Movement(getAbsMousePos(), selectedObject, moveSpeed));
+            }
         }
     }
 
@@ -70,22 +100,22 @@ public class CameraControls : MonoBehaviour
     {
         ScreenScrolling();
 
-        if (selectedObject != null && selectedObject.transform.position != selectedObjectTarget)
-        {
-            float distance = Vector3.Distance(selectedObject.transform.position, selectedObjectTarget);
+        for (int i = movements.Count - 1; i >= 0; i--) {            
+            float distance = Vector3.Distance(movements[i].GJ.transform.position, movements[i].targetPos);
 
-            if (distance < moveSpeed) {
-                selectedObject.transform.position = selectedObjectTarget;
+            if (distance < moveSpeed)
+            {
+                movements[i].GJ.transform.position = movements[i].targetPos;
+                movements.RemoveAt(i);
             }
 
-            Vector3 newPos = selectedObject.transform.position;
+            Vector3 newPos = movements[i].GJ.transform.position;
 
-            newPos.x += moveSpeed * (-selectedObject.transform.position.x + selectedObjectTarget.x) / distance;
-            newPos.z += moveSpeed * (-selectedObject.transform.position.z + selectedObjectTarget.z) / distance;
+            newPos.x += moveSpeed * (-movements[i].GJ.transform.position.x + movements[i].targetPos.x) / distance;
+            newPos.z += moveSpeed * (-movements[i].GJ.transform.position.z + movements[i].targetPos.z) / distance;
 
-            selectedObject.transform.position = newPos;
+            movements[i].GJ.transform.position = newPos;
         }
-
     }
 
     void ScreenScrolling() {
