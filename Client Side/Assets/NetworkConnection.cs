@@ -233,12 +233,14 @@ public class NetworkConnection : MonoBehaviour
             if (UC.cellType == 0) //virus
             {
                 CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(VirusScale, VirusScale, VirusScale);
+                CellList[UC.cellType][UC.id].GJ.tag = "Virus";
             }
 
             float WBCScale = 0.5f;
             if (UC.cellType == 1) //WBC
             {
                 CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(WBCScale, WBCScale, WBCScale);
+                CellList[UC.cellType][UC.id].GJ.tag = "WBC";
             }
 
             float antibodyScale = 0.6f;
@@ -252,8 +254,6 @@ public class NetworkConnection : MonoBehaviour
             {
                 CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(CellScale, CellScale, CellScale);
             }
-
-            CellList[UC.cellType][UC.id].GJ.tag = "Cell";
         }
     }
 
