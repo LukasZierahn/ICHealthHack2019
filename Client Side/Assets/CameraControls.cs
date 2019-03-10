@@ -123,9 +123,7 @@ public class CameraControls : MonoBehaviour
 
             movements[i].GJ.transform.position = newPos;
         }
-
-        NC.TalkToServer();
-    }
+   }
 
     void ScreenScrolling() {
         Vector3 mouseMovement = new Vector3(0, 0, 0);
