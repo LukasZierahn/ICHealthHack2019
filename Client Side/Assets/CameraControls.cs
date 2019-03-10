@@ -22,6 +22,7 @@ public struct Movement
 public class CameraControls : MonoBehaviour
 {
     bool but0Pressed = false;
+    bool VirusPlayer = true;
 
     float mouseMovementThreshold = 200.0f;
     const float mouseMovementSpeed = 0.2f;
@@ -58,14 +59,30 @@ public class CameraControls : MonoBehaviour
             Vector3 mp = getAbsMousePos();
 
             Vector3 relPos = new Vector3(0, 0, 0);
-            foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("Cell"))
+
+            if (VirusPlayer)
             {
-                relPos = mp - GJ.transform.position;
-                if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
+                foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("Virus"))
                 {
-                    selectedObject = GJ;
-                    GJ.GetComponent<Renderer>().material.color = Color.red;
-                    break;
+                    relPos = mp - GJ.transform.position;
+                    if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
+                    {
+                        selectedObject = GJ;
+                        GJ.GetComponent<Renderer>().material.color = Color.red;
+                        break;
+                    }
+                }
+            }
+            else {
+                foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("WBC"))
+                {
+                    relPos = mp - GJ.transform.position;
+                    if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
+                    {
+                        selectedObject = GJ;
+                        GJ.GetComponent<Renderer>().material.color = Color.red;
+                        break;
+                    }
                 }
             }
 
