@@ -76,9 +76,9 @@ public class CameraControls : MonoBehaviour
             but0Pressed = false;
         }
 
-        if (Input.GetMouseButtonDown(1))
+        if (Input.GetMouseButtonDown(1) && selectedObject != null)
         {
-            bool found = false;
+            /*bool found = false;
             for (int i = 0; i < movements.Count; i++)
             {
                 if (movements[i].GJ == selectedObject)
@@ -86,7 +86,7 @@ public class CameraControls : MonoBehaviour
                     Vector3 mousePos = getAbsMousePos();
 
                     movements[i] = new Movement(mousePos, movements[i].GJ, movements[i].speed);
-                    NC.messages.Add(new ClickOrder("1", mousePos.x, mousePos.z));
+                    NC.messages.Add(new ClickOrder(1, mousePos.x, mousePos.z));
                     found = true;
                     break;
                 }
@@ -97,7 +97,19 @@ public class CameraControls : MonoBehaviour
                 Vector3 mousePos = getAbsMousePos();
 
                 movements.Add(new Movement(mousePos, selectedObject, moveSpeed));
-                NC.messages.Add(new ClickOrder("1", mousePos.x, mousePos.z));
+                NC.messages.Add(new ClickOrder(1, mousePos.x, mousePos.z));
+            }*/
+
+            Vector3 mousePos = getAbsMousePos();
+            foreach (Dictionary<int, CellGJ> dict in GameObject.Find("Spawner").GetComponent<NetworkConnection>().CellList)
+            {
+                foreach (KeyValuePair<int, CellGJ> entry in dict)
+                {
+                    if (entry.Value.GJ == selectedObject)
+                    {
+                        NC.messages.Add(new ClickOrder(entry.Value.id, mousePos.x, mousePos.z));
+                    }
+                }
             }
         }
     }
