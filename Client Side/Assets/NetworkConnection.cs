@@ -13,13 +13,13 @@ public struct ClickOrder
     public string type;
     public int id;
     public float x;
-    public float z;
+    public float y;
 
-    public ClickOrder(int id, float x, float z) {
+    public ClickOrder(int id, float x, float y) {
         type = "CO";
         this.id = id;
         this.x = x;
-        this.z = z;
+        this.y = y;
     }
 };
 
@@ -30,6 +30,14 @@ public struct UpdatedCell
     public float x;
     public float y;
     public bool removed;
+
+    public UpdatedCell(int cellType, int id, float x, float y, bool removed) {
+        this.cellType = cellType;
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.removed = removed;
+    }
 };
 
 public struct CellGJ
@@ -50,35 +58,38 @@ public struct CellGJ
 public class NetworkConnection : MonoBehaviour 
 {
     public GameObject virusPrefab;
+    public GameObject wbcPrefab;
+    public GameObject antiBodyPrefab;
+    public GameObject cellPrefab;
 
     public List<GameObject> prefabs = new List<GameObject>();
 
-    const int cellTypeCount = 4;
-
-    const string ipServer = "146.179.203.201";
+    const string ipServer = "146.179.194.147";
     Socket socket;
 
-    byte[] inpBuffer = new byte[1024];
+    byte[] inpBuffer = new byte[2048];
 
     public List<object> messages = new List<object>();
 
     public List<Dictionary<int, CellGJ>> CellList = new List<Dictionary<int, CellGJ>>();
     System.Random rand = new System.Random();
 
-    // Start is called before the first frame update
-    public NetworkConnection()
-    {
-        socket = ConnectSocket(ipServer, 8000);
-
-    }
-
     public void Start()
     {
-        for (int i = 0; i < cellTypeCount; i++) {
+        prefabs.Add(virusPrefab);
+        prefabs.Add(wbcPrefab);
+        prefabs.Add(antiBodyPrefab);
+        prefabs.Add(cellPrefab);
+
+        for (int i = 0; i < prefabs.Count; i++)
+        {
             CellList.Add(new Dictionary<int, CellGJ>());
         }
 
-        prefabs.Add(virusPrefab);
+        UpdatedCell UP = new UpdatedCell(0, 1, 0, 0, false);
+        //AddOrMoveCell(UP);
+
+        socket = ConnectSocket(ipServer, 8000);
     }
 
     public void FixedUpdate()
@@ -100,32 +111,31 @@ public class NetworkConnection : MonoBehaviour
         request += requestParams;
         Byte[] bytesSent = Encoding.ASCII.GetBytes(request);
 
-        if (socket.Connected)
+        if (socket != null && socket.Connected)
         {
             socket.Send(bytesSent, bytesSent.Length, 0);
 
             int inpByteCount = socket.Receive(inpBuffer);
 
             String input = Encoding.ASCII.GetString(inpBuffer, 0, inpByteCount);
+            Debug.Log(input);
             String[] inputArr = input.Split('\n');
 
+            if (inputArr[inputArr.Length - 1].Length == 2) return;
 
-            String intermediate = inputArr[inputArr.Length - 1].Substring(1, inputArr[inputArr.Length - 1].Length - 2).Replace(":", ",");
+            String intermediate = inputArr[inputArr.Length - 1].Replace(":", ",").Replace("}", "").Replace("{","").Replace("]","").Replace("[","").Replace("\"","");
+            Debug.Log(intermediate);
             String[] JSONArr = intermediate.Split(',');
 
-            for (int i = 0; i < JSONArr.Length; i += 1)
-            {
-                JSONArr[i] = JSONArr[i].Substring(1, JSONArr[i].Length - 2);
-            }
-
-            Dictionary<Type, object> resultDic = new Dictionary<Type, object>();
+            List<object> resultList = new List<object>();
 
             for (int i = 0; i < JSONArr.Length; i += 2)
             {
                 if (!JSONArr[i].Equals("type"))
                 {
-                    Debug.Log("1: " + JSONArr[i]);
-                    throw new Exception("Incoming parsing error");
+                    Debug.Log("UnkownType: " + JSONArr[i]);
+                    continue;
+                    //throw new Exception("Incoming parsing error");
                 }
 
                 Type currentType = Type.GetType(JSONArr[i + 1]);
@@ -144,14 +154,14 @@ public class NetworkConnection : MonoBehaviour
                     field.SetValue(newObj, Convert.ChangeType(JSONArr[i + 1], field.FieldType));
                 }
 
-                resultDic.Add(currentType, newObj);
+                resultList.Add(newObj);
             }
 
-            foreach (KeyValuePair<Type, object> entry in resultDic)
+            foreach (object obj in resultList)
             {
-                if (entry.Key == typeof(UpdatedCell))
+                if (obj.GetType() == typeof(UpdatedCell))
                 {
-                    UpdatedCell uc = ((UpdatedCell)entry.Value);
+                    UpdatedCell uc = ((UpdatedCell)obj);
 
                     AddOrMoveCell(uc);
                     //AddVirus(vp.id, new Vector3(vp.x, 0, vp.z));
@@ -206,6 +216,7 @@ public class NetworkConnection : MonoBehaviour
         {
             if (UC.removed)
             {
+                Destroy(CellList[UC.cellType][UC.id].GJ);
                 CellList[UC.cellType].Remove(UC.id);
             }
             else
@@ -217,6 +228,32 @@ public class NetworkConnection : MonoBehaviour
         {
             Quaternion rot = new Quaternion((float) rand.NextDouble(), (float) rand.NextDouble(), (float) rand.NextDouble(),(float) rand.NextDouble());
             CellList[UC.cellType].Add(UC.id, new CellGJ(UC.cellType, UC.id, Instantiate(prefabs[UC.cellType], pos, rot)));
+
+            float VirusScale = 0.2f;
+            if (UC.cellType == 0) //virus
+            {
+                CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(VirusScale, VirusScale, VirusScale);
+            }
+
+            float WBCScale = 0.5f;
+            if (UC.cellType == 1) //WBC
+            {
+                CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(WBCScale, WBCScale, WBCScale);
+            }
+
+            float antibodyScale = 0.6f;
+            if (UC.cellType == 2) //antibody
+            {
+                CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(antibodyScale, antibodyScale, antibodyScale);
+            }
+
+            float CellScale = 0.8f;
+            if (UC.cellType == 3) //Cell
+            {
+                CellList[UC.cellType][UC.id].GJ.transform.localScale = new Vector3(CellScale, CellScale, CellScale);
+            }
+
+            CellList[UC.cellType][UC.id].GJ.tag = "Cell";
         }
     }
 

@@ -21,8 +21,6 @@ public struct Movement
 
 public class CameraControls : MonoBehaviour
 {
-    NetworkConnection NC = new NetworkConnection();
-
     bool but0Pressed = false;
 
     float mouseMovementThreshold = 200.0f;
@@ -60,13 +58,14 @@ public class CameraControls : MonoBehaviour
             Vector3 mp = getAbsMousePos();
 
             Vector3 relPos = new Vector3(0, 0, 0);
-            foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("Virus"))
+            foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("Cell"))
             {
                 relPos = mp - GJ.transform.position;
                 if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
                 {
                     selectedObject = GJ;
                     GJ.GetComponent<Renderer>().material.color = Color.red;
+                    break;
                 }
             }
 
@@ -105,9 +104,9 @@ public class CameraControls : MonoBehaviour
             {
                 foreach (KeyValuePair<int, CellGJ> entry in dict)
                 {
-                    if (entry.Value.GJ == selectedObject)
+                    if (GameObject.ReferenceEquals(entry.Value.GJ, selectedObject))
                     {
-                        NC.messages.Add(new ClickOrder(entry.Value.id, mousePos.x, mousePos.z));
+                        GameObject.Find("Spawner").GetComponent<NetworkConnection>().messages.Add(new ClickOrder(entry.Value.id, mousePos.x, mousePos.z));
                     }
                 }
             }
