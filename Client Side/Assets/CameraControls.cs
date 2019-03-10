@@ -12,6 +12,7 @@ public struct Movement
     public Movement(Vector3 tP, GameObject gameObject, float spd)
     {
         targetPos = tP;
+        targetPos.y = 0;
         GJ = gameObject;
         speed = spd;
     }
@@ -20,12 +21,14 @@ public struct Movement
 
 public class CameraControls : MonoBehaviour
 {
-    Boolean but0Pressed = false;
+    NetworkConnection NC = new NetworkConnection();
+
+    bool but0Pressed = false;
 
     float mouseMovementThreshold = 200.0f;
     const float mouseMovementSpeed = 0.2f;
 
-    const float selectingDistance = 0.1f;
+    const float selectingDistance = 0.5f;
 
     List<Movement> movements = new List<Movement>();
 
@@ -33,15 +36,13 @@ public class CameraControls : MonoBehaviour
     float moveSpeed = 0.5f;
 
     Camera cam = null;
-    Renderer rend = null;
 
     // Start is called before the first frame update
     void Start()
     {
         mouseMovementThreshold = Math.Min(Screen.height * 0.2f, Screen.width * 0.2f);
 
-        cam = Camera.main;
-        Renderer rend = GetComponent<Renderer>();
+        cam = GetComponent<Camera>();
     }
 
     void Update()
@@ -53,15 +54,14 @@ public class CameraControls : MonoBehaviour
             if (selectedObject != null) {
                 selectedObject.GetComponent<Renderer>().material.color = Color.white;
             }
+
             selectedObject = null;
 
             Vector3 mp = getAbsMousePos();
 
             Vector3 relPos = new Vector3(0, 0, 0);
-
             foreach (GameObject GJ in GameObject.FindGameObjectsWithTag("Virus"))
             {
-
                 relPos = mp - GJ.transform.position;
                 if (Math.Abs(relPos.x) < selectingDistance && Math.Abs(relPos.z) < selectingDistance)
                 {
@@ -83,15 +83,21 @@ public class CameraControls : MonoBehaviour
             {
                 if (movements[i].GJ == selectedObject)
                 {
-                    movements[i] = new Movement(getAbsMousePos(), movements[i].GJ, movements[i].speed);
+                    Vector3 mousePos = getAbsMousePos();
+
+                    movements[i] = new Movement(mousePos, movements[i].GJ, movements[i].speed);
+                    NC.messages.Add(new ClickOrder("1", mousePos.x, mousePos.z));
                     found = true;
                     break;
                 }
             }
 
-            if (!found)
+            if (!found && selectedObject != null)
             {
-                movements.Add(new Movement(getAbsMousePos(), selectedObject, moveSpeed));
+                Vector3 mousePos = getAbsMousePos();
+
+                movements.Add(new Movement(mousePos, selectedObject, moveSpeed));
+                NC.messages.Add(new ClickOrder("1", mousePos.x, mousePos.z));
             }
         }
     }
@@ -100,13 +106,14 @@ public class CameraControls : MonoBehaviour
     {
         ScreenScrolling();
 
-        for (int i = movements.Count - 1; i >= 0; i--) {            
+        for (int i = movements.Count - 1; i >= 0; i--) {
             float distance = Vector3.Distance(movements[i].GJ.transform.position, movements[i].targetPos);
 
             if (distance < moveSpeed)
             {
                 movements[i].GJ.transform.position = movements[i].targetPos;
                 movements.RemoveAt(i);
+                continue;
             }
 
             Vector3 newPos = movements[i].GJ.transform.position;
@@ -116,6 +123,8 @@ public class CameraControls : MonoBehaviour
 
             movements[i].GJ.transform.position = newPos;
         }
+
+        NC.TalkToServer();
     }
 
     void ScreenScrolling() {
@@ -145,10 +154,7 @@ public class CameraControls : MonoBehaviour
     }
 
     Vector3 getAbsMousePos() {
-        RaycastHit hit;
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Physics.Raycast(ray, out hit);
+        return Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        return hit.point;
     }
 }
